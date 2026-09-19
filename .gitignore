@@ -1,0 +1,7 @@
+/target/
+/out/
+*.class
+.idea/
+*.iml
+CompanySync/
+.pbl4sync-state.properties

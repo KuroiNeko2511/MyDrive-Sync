@@ -1,0 +1,82 @@
+-- The Java server creates/updates these tables automatically on startup.
+-- This file is provided as a quick reference for the project report.
+CREATE DATABASE IF NOT EXISTS pbl4sync CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE pbl4sync;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(80) NOT NULL UNIQUE,
+  password_hash VARCHAR(512) NOT NULL,
+  system_role VARCHAR(20) NOT NULL DEFAULT 'USER',
+  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS workspaces (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  created_by BIGINT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(created_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS workspace_members (
+  workspace_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  workspace_role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',
+  can_read BOOLEAN NOT NULL DEFAULT TRUE,
+  can_write BOOLEAN NOT NULL DEFAULT FALSE,
+  can_modify BOOLEAN NOT NULL DEFAULT FALSE,
+  can_delete BOOLEAN NOT NULL DEFAULT FALSE,
+  joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(workspace_id,user_id),
+  FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS agents (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  device_name VARCHAR(180) NOT NULL,
+  last_ip VARCHAR(64), status VARCHAR(20) NOT NULL DEFAULT 'OFFLINE',
+  last_online TIMESTAMP NULL,
+  UNIQUE KEY uq_agent(user_id,device_name),
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS files (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  workspace_id BIGINT NOT NULL,
+  relative_path VARCHAR(700) NOT NULL,
+  size BIGINT NOT NULL DEFAULT 0,
+  checksum VARCHAR(128),
+  version BIGINT NOT NULL DEFAULT 1,
+  modified_by BIGINT,
+  modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  UNIQUE KEY uq_workspace_path(workspace_id,relative_path),
+  FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+  FOREIGN KEY(modified_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS file_replicas (
+  file_id BIGINT NOT NULL,
+  agent_id BIGINT NOT NULL,
+  version BIGINT NOT NULL,
+  checksum VARCHAR(128),
+  last_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(file_id,agent_id),
+  FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE,
+  FOREIGN KEY(agent_id) REFERENCES agents(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS activities (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT,
+  workspace_id BIGINT,
+  action VARCHAR(80) NOT NULL,
+  detail VARCHAR(1000),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE SET NULL
+);

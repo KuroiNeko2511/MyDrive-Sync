@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run PBL4 Server",
+      "request": "launch",
+      "mainClass": "vn.edu.pbl4sync.server.ServerMain",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "java",
+      "name": "Run PBL4 Agent",
+      "request": "launch",
+      "mainClass": "vn.edu.pbl4sync.client.ClientMain",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
